@@ -29,29 +29,52 @@ app.use("/repartidores", repartidoresRouter);
 app.use("/pedidos", pedidosRouter);
 app.use("/detalle-pedidos", detallePedidosRouter);
 // PRUEBA DE CONEXIÓN
-app.get("/db-test", async function (req: Request, res: Response) {
-  try {
-    const result = await pool.query("SELECT * FROM productos;");
+app.get(
+  "/db-test",
+  /*
+    #swagger.tags = ['Servidor']
+    #swagger.summary = 'Verificar conexión con la base de datos'
+    #swagger.description = 'Comprueba que el servidor puede conectarse correctamente a PostgreSQL.'
+    #swagger.responses[200] = {
+      description: 'Conexión exitosa con PostgreSQL.'
+    }
+    #swagger.responses[500] = {
+      description: 'Error al conectar con la base de datos.'
+    }
+  */ async function (req: Request, res: Response) {
+    try {
+      const result = await pool.query("SELECT * FROM productos;");
 
+      res.json({
+        message: "Conexion exitosa a la base de datos :D",
+        total: result.rowCount,
+        data: result.rows,
+      });
+    } catch (error) {
+      console.error("error al consultar PostgreSQL:");
+
+      res.status(500).json({
+        message: "error al intentar conectar a la base de datos :c",
+      });
+    }
+  },
+);
+
+app.get(
+  "/",
+  /*
+    #swagger.tags = ['Servidor']
+    #swagger.summary = 'Verificar estado del servidor'
+    #swagger.description = 'Comprueba que la API se encuentra funcionando correctamente.'
+    #swagger.responses[200] = {
+      description: 'Servidor funcionando correctamente.'
+    }
+  */ function (req: Request, res: Response) {
     res.json({
-      message: "Conexion exitosa a la base de datos :D",
-      total: result.rowCount,
-      data: result.rows,
+      message: "servidor corriendo exitosamente",
     });
-  } catch (error) {
-    console.error("error al consultar PostgreSQL:");
-
-    res.status(500).json({
-      message: "error al intentar conectar a la base de datos :c",
-    });
-  }
-});
-
-app.get("/", function (req: Request, res: Response) {
-  res.json({
-    message: "servidor corriendo exitosamente",
-  });
-});
+  },
+);
 
 app.listen(PORT, async function () {
   console.log(`servidor corriendo en http://localhost:${PORT}`);

@@ -4,10 +4,12 @@ import {
   RepartidorModel,
   type CreateRepartidorInput,
 } from "../models/repartidores.js";
-
 // GET /repartidores
 export async function getRepartidores(req: Request, res: Response) {
   try {
+    // #swagger.tags = ['Repartidores']
+    // #swagger.summary = 'Obtener todos los repartidores'
+    // #swagger.description = 'Retorna una lista con todos los repartidores registrados en la base de datos.'
     const repartidores = await RepartidorModel.findAll();
 
     res.json({
@@ -25,6 +27,15 @@ export async function getRepartidores(req: Request, res: Response) {
 // GET /repartidores/:id
 export async function getRepartidorById(req: Request, res: Response) {
   try {
+    // #swagger.tags = ['Repartidores']
+    // #swagger.summary = 'Obtener un repartidor por ID'
+    // #swagger.description = 'Busca un repartidor específico utilizando su ID numérico.'
+    /* #swagger.parameters['id'] = {
+        in: 'path',
+        description: 'ID del repartidor',
+        required: true,
+        type: 'integer'
+    } */
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -54,6 +65,20 @@ export async function getRepartidorById(req: Request, res: Response) {
 // POST /repartidores
 export async function postRepartidor(req: Request, res: Response) {
   try {
+    // #swagger.tags = ['Repartidores']
+    // #swagger.summary = 'Crear un nuevo repartidor'
+    // #swagger.description = 'Registra un nuevo repartidor en el sistema.'
+    /* #swagger.parameters['body'] = {
+        in: 'body',
+        description: 'Datos del nuevo repartidor',
+        required: true,
+        schema: {
+            nombre: 'Juan Pérez',
+            vehiculo: 'Motocicleta Honda',
+            telefono: '+56912345678',
+            activo: true
+        }
+    } */
     const { nombre, vehiculo, telefono, activo } = req.body;
 
     if (!nombre || !vehiculo || !telefono) {
@@ -80,9 +105,28 @@ export async function postRepartidor(req: Request, res: Response) {
   }
 }
 
-// PUT /repartidores/:id
 export async function putRepartidor(req: Request, res: Response) {
   try {
+    // #swagger.tags = ['Repartidores']
+    // #swagger.summary = 'Actualizar un repartidor'
+    // #swagger.description = 'Modifica los datos de un repartidor existente.'
+    /* #swagger.parameters['id'] = {
+        in: 'path',
+        description: 'ID del repartidor a modificar',
+        required: true,
+        type: 'integer'
+    } */
+    /* #swagger.parameters['body'] = {
+        in: 'body',
+        description: 'Datos a actualizar del repartidor',
+        required: true,
+        schema: {
+            nombre: 'Juan Pérez Modificado',
+            vehiculo: 'Automóvil Sedan',
+            telefono: '+56987654321',
+            activo: false
+        }
+    } */
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -123,9 +167,17 @@ export async function putRepartidor(req: Request, res: Response) {
   }
 }
 
-// DELETE /repartidores/:id
 export async function deleteRepartidor(req: Request, res: Response) {
   try {
+    // #swagger.tags = ['Repartidores']
+    // #swagger.summary = 'Eliminar un repartidor'
+    // #swagger.description = 'Elimina de forma permanente un repartidor por su ID.'
+    /* #swagger.parameters['id'] = {
+        in: 'path',
+        description: 'ID del repartidor a eliminar',
+        required: true,
+        type: 'integer'
+    } */
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
