@@ -1,14 +1,19 @@
-import { pool } from "../db.js";
 import type { Request, Response } from "express";
 
+import {
+  RepartidorModel,
+  type CreateRepartidorInput,
+} from "../models/repartidores.js";
+
+// GET /repartidores
 export async function getRepartidores(req: Request, res: Response) {
   try {
-    const result = await pool.query("SELECT * FROM repartidores;");
+    const repartidores = await RepartidorModel.findAll();
 
     res.json({
-      message: "Conexion exitosa a la base de datos :D",
-      total: result.rowCount,
-      data: result.rows,
+      message: "Repartidores obtenidos correctamente",
+      total: repartidores.length,
+      data: repartidores,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -17,30 +22,28 @@ export async function getRepartidores(req: Request, res: Response) {
   }
 }
 
+// GET /repartidores/:id
 export async function getRepartidorById(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query(
-      "SELECT * FROM repartidores WHERE id = $1;",
-      [id],
-    );
+    const repartidor = await RepartidorModel.findById(id);
 
-    if (result.rows.length === 0) {
+    if (!repartidor) {
       res.status(404).json({
         error: "Repartidor no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(repartidor);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -48,26 +51,28 @@ export async function getRepartidorById(req: Request, res: Response) {
   }
 }
 
+// POST /repartidores
 export async function postRepartidor(req: Request, res: Response) {
   try {
     const { nombre, vehiculo, telefono, activo } = req.body;
 
     if (!nombre || !vehiculo || !telefono) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
+        error: "Nombre, vehículo y teléfono son obligatorios",
       });
       return;
     }
 
-    const result = await pool.query(
-      `INSERT INTO repartidores
-      (nombre, vehiculo, telefono, activo)
-      VALUES ($1, $2, $3, COALESCE($4, TRUE))
-      RETURNING *;`,
-      [nombre, vehiculo, telefono, activo],
-    );
+    const datos: CreateRepartidorInput = {
+      nombre,
+      vehiculo,
+      telefono,
+      activo: activo ?? true,
+    };
 
-    res.status(201).json(result.rows[0]);
+    const repartidor = await RepartidorModel.create(datos);
+
+    res.status(201).json(repartidor);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -75,13 +80,14 @@ export async function postRepartidor(req: Request, res: Response) {
   }
 }
 
+// PUT /repartidores/:id
 export async function putRepartidor(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
@@ -95,25 +101,21 @@ export async function putRepartidor(req: Request, res: Response) {
       return;
     }
 
-    const result = await pool.query(
-      `UPDATE repartidores
-       SET nombre = $1,
-           vehiculo = $2,
-           telefono = $3,
-           activo = $4
-       WHERE id = $5
-       RETURNING *;`,
-      [nombre, vehiculo, telefono, activo, id],
-    );
+    const repartidor = await RepartidorModel.update(id, {
+      nombre,
+      vehiculo,
+      telefono,
+      activo,
+    });
 
-    if (result.rows.length === 0) {
+    if (!repartidor) {
       res.status(404).json({
         error: "Repartidor no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(repartidor);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -121,23 +123,21 @@ export async function putRepartidor(req: Request, res: Response) {
   }
 }
 
+// DELETE /repartidores/:id
 export async function deleteRepartidor(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query(
-      "DELETE FROM repartidores WHERE id = $1 RETURNING *;",
-      [id],
-    );
+    const eliminado = await RepartidorModel.delete(id);
 
-    if (result.rows.length === 0) {
+    if (!eliminado) {
       res.status(404).json({
         error: "Repartidor no encontrado",
       });
@@ -145,8 +145,7 @@ export async function deleteRepartidor(req: Request, res: Response) {
     }
 
     res.json({
-      message: "Repartidor eliminado exitosamente",
-      data: result.rows[0],
+      message: "Repartidor eliminado correctamente",
     });
   } catch (error: any) {
     res.status(500).json({

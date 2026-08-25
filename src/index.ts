@@ -3,45 +3,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
 import type { Request, Response } from "express";
-import {
-  getProductos,
-  getProductosdeId,
-  postProducto,
-  putProducto,
-  deleteProducto,
-} from "./controllers/productos.js";
-import {
-  getClientes,
-  getClienteById,
-  postCliente,
-  putCliente,
-  deleteCliente,
-} from "./controllers/clientes.js";
-//repartidores
-import {
-  getRepartidores,
-  getRepartidorById,
-  postRepartidor,
-  putRepartidor,
-  deleteRepartidor,
-} from "./controllers/repartidores.js";
+import productosRouter from "./routes/product.routes.js";
+import clientesRouter from "./routes/client.routes.js";
+import repartidoresRouter from "./routes/repartidores.routes.js";
+import pedidosRouter from "./routes/pedidos.routes.js";
+import detallePedidosRouter from "./routes/detallePedidos.routes.js";
+import swaggerUi from "swagger-ui-express";
+import fs from "node:fs";
 dotenv.config();
-//pedidos
-import {
-  getPedidos,
-  getPedidoById,
-  postPedido,
-  putPedido,
-  deletePedido,
-} from "./controllers/pedidos.js";
-//detallePedidos
-import {
-  getDetallePedidos,
-  getDetallePedidoById,
-  postDetallePedido,
-  putDetallePedido,
-  deleteDetallePedido,
-} from "./controllers/detallePedidos.js";
+const swaggerDocument = JSON.parse(
+  fs.readFileSync("./src/swagger_output.json", "utf-8"),
+);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +21,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.use("/productos", productosRouter);
+app.use("/clientes", clientesRouter);
+app.use("/repartidores", repartidoresRouter);
+app.use("/pedidos", pedidosRouter);
+app.use("/detalle-pedidos", detallePedidosRouter);
 // PRUEBA DE CONEXIÓN
 app.get("/db-test", async function (req: Request, res: Response) {
   try {
@@ -67,36 +46,6 @@ app.get("/db-test", async function (req: Request, res: Response) {
     });
   }
 });
-//CLIENTES
-app.get("/clientes", getClientes);
-app.get("/clientes/:id", getClienteById);
-app.post("/clientes", postCliente);
-app.put("/clientes/:id", putCliente);
-app.delete("/clientes/:id", deleteCliente);
-// PRODUCTOS
-app.get("/productos", getProductos);
-app.get("/productos/:id", getProductosdeId);
-app.post("/productos", postProducto);
-app.put("/productos/:id", putProducto);
-app.delete("/productos/:id", deleteProducto);
-//repartidores
-app.get("/repartidores", getRepartidores);
-app.get("/repartidores/:id", getRepartidorById);
-app.post("/repartidores", postRepartidor);
-app.put("/repartidores/:id", putRepartidor);
-app.delete("/repartidores/:id", deleteRepartidor);
-//pedidos
-app.get("/pedidos", getPedidos);
-app.get("/pedidos/:id", getPedidoById);
-app.post("/pedidos", postPedido);
-app.put("/pedidos/:id", putPedido);
-app.delete("/pedidos/:id", deletePedido);
-//detallePedidos
-app.get("/detalle-pedidos", getDetallePedidos);
-app.get("/detalle-pedidos/:id", getDetallePedidoById);
-app.post("/detalle-pedidos", postDetallePedido);
-app.put("/detalle-pedidos/:id", putDetallePedido);
-app.delete("/detalle-pedidos/:id", deleteDetallePedido);
 
 app.get("/", function (req: Request, res: Response) {
   res.json({
@@ -117,3 +66,4 @@ app.listen(PORT, async function () {
     console.log("ERROR EN LA CONEXION");
   }
 });
+//pedidos http://localhost:3000/detalle-pedidos
