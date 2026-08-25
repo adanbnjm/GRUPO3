@@ -272,49 +272,50 @@
         "tags": [
           "Clientes"
         ],
-        "summary": "Crear cliente",
-        "description": "Registra un nuevo cliente.",
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "nombre": {
-                    "type": "string",
-                    "example": "Juan"
-                  },
-                  "apellidos": {
-                    "type": "string",
-                    "example": "Pérez"
-                  },
-                  "telefono": {
-                    "type": "string",
-                    "example": "70012345"
-                  },
-                  "direccion": {
-                    "type": "string",
-                    "example": "Av. Principal #123"
-                  },
-                  "email": {
-                    "type": "string",
-                    "example": "juan@gmail.com"
-                  }
+        "summary": "Crear un nuevo cliente",
+        "description": "Registra un nuevo cliente en la base de datos.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "description": "Datos del nuevo cliente",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string",
+                  "example": "Juan"
+                },
+                "apellidos": {
+                  "type": "string",
+                  "example": "Pérez"
+                },
+                "telefono": {
+                  "type": "string",
+                  "example": "70012345"
+                },
+                "direccion": {
+                  "type": "string",
+                  "example": "Av. Principal #123"
+                },
+                "email": {
+                  "type": "string",
+                  "example": "juan@gmail.com"
                 }
               }
             }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Cliente creado correctamente."
+          },
+          "400": {
+            "description": "Nombre y apellidos son obligatorios."
+          },
+          "500": {
+            "description": "Error al crear el cliente."
           }
         }
       }

@@ -43,39 +43,28 @@ router.post(
   "/",
   /*
     #swagger.tags = ['Clientes']
-    #swagger.summary = 'Crear cliente'
-    #swagger.description = 'Registra un nuevo cliente.'
-    #swagger.requestBody = {
+    #swagger.summary = 'Crear un nuevo cliente'
+    #swagger.description = 'Registra un nuevo cliente en la base de datos.'
+    #swagger.parameters['body'] = {
+      in: 'body',
       required: true,
-      content: {
-        "application/json": {
-          schema: {
-            type: "object",
-            properties: {
-              nombre: {
-                type: "string",
-                example: "Juan"
-              },
-              apellidos: {
-                type: "string",
-                example: "Pérez"
-              },
-              telefono: {
-                type: "string",
-                example: "70012345"
-              },
-              direccion: {
-                type: "string",
-                example: "Av. Principal #123"
-              },
-              email: {
-                type: "string",
-                example: "juan@gmail.com"
-              }
-            }
-          }
-        }
+      description: 'Datos del nuevo cliente',
+      schema: {
+        nombre: 'Juan',
+        apellidos: 'Pérez',
+        telefono: '70012345',
+        direccion: 'Av. Principal #123',
+        email: 'juan@gmail.com'
       }
+    }
+    #swagger.responses[201] = {
+      description: 'Cliente creado correctamente.'
+    }
+    #swagger.responses[400] = {
+      description: 'Nombre y apellidos son obligatorios.'
+    }
+    #swagger.responses[500] = {
+      description: 'Error al crear el cliente.'
     }
   */
   postCliente,
