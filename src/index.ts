@@ -80,11 +80,7 @@ app.post("/productos", postProducto);
 app.put("/productos/:id", putProducto);
 app.delete("/productos/:id", deleteProducto);
 //repartidores
-app.get("/repartidores", getRepartidores);
-app.get("/repartidores/:id", getRepartidorById);
-app.post("/repartidores", postRepartidor);
-app.put("/repartidores/:id", putRepartidor);
-app.delete("/repartidores/:id", deleteRepartidor);
+app.use("/api", repartidoresRoutes);
 //pedidos
 app.get("/pedidos", getPedidos);
 app.get("/pedidos/:id", getPedidoById);
