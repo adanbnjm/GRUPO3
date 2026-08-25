@@ -10,12 +10,3 @@ export const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 });
-pool
-  .connect()
-  .then((client) => {
-    console.log("✅ CONECTADO A POSTGRESQL");
-    client.release();
-  })
-  .catch((error) => {
-    console.error("❌ ERROR EN POSTGRESQL:", error.message);
-  });

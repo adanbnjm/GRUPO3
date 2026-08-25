@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // PROBANDO CONEXCION A LA BASE DE DATOS
+//http://localhost:3000/db-test para probar
 app.get("/db-test", async function (req: Request, res: Response) {
   try {
     const result = await pool.query("SELECT * FROM productos;");
