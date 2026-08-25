@@ -1,14 +1,16 @@
-import { pool } from "../db.js";
 import type { Request, Response } from "express";
 
+import { ClienteModel, type CreateClienteInput } from "../models/clientes.js";
+
+// GET /clientes
 export async function getClientes(req: Request, res: Response) {
   try {
-    const result = await pool.query("SELECT * FROM clientes;");
+    const clientes = await ClienteModel.findAll();
 
     res.json({
-      message: "Conexion exitosa a la base de datos :D",
-      total: result.rowCount,
-      data: result.rows,
+      message: "Clientes obtenidos correctamente",
+      total: clientes.length,
+      data: clientes,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -17,29 +19,28 @@ export async function getClientes(req: Request, res: Response) {
   }
 }
 
+// GET /clientes/:id
 export async function getClienteById(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query("SELECT * FROM clientes WHERE id = $1;", [
-      id,
-    ]);
+    const cliente = await ClienteModel.findById(id);
 
-    if (result.rows.length === 0) {
+    if (!cliente) {
       res.status(404).json({
         error: "Cliente no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(cliente);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -47,19 +48,29 @@ export async function getClienteById(req: Request, res: Response) {
   }
 }
 
+// POST /clientes
 export async function postCliente(req: Request, res: Response) {
   try {
     const { nombre, apellidos, telefono, direccion, email } = req.body;
 
-    const result = await pool.query(
-      `INSERT INTO clientes
-      (nombre, apellidos, telefono, direccion, email)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *;`,
-      [nombre, apellidos, telefono, direccion, email],
-    );
+    if (!nombre || !apellidos) {
+      res.status(400).json({
+        error: "Nombre y apellidos son obligatorios",
+      });
+      return;
+    }
 
-    res.status(201).json(result.rows[0]);
+    const datos: CreateClienteInput = {
+      nombre,
+      apellidos,
+      telefono: telefono ?? null,
+      direccion: direccion ?? null,
+      email: email ?? null,
+    };
+
+    const cliente = await ClienteModel.create(datos);
+
+    res.status(201).json(cliente);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -67,39 +78,43 @@ export async function postCliente(req: Request, res: Response) {
   }
 }
 
+// PUT /clientes/:id
 export async function putCliente(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
     const { nombre, apellidos, telefono, direccion, email } = req.body;
 
-    const result = await pool.query(
-      `UPDATE clientes
-       SET nombre = $1,
-           apellidos = $2,
-           telefono = $3,
-           direccion = $4,
-           email = $5
-       WHERE id = $6
-       RETURNING *;`,
-      [nombre, apellidos, telefono, direccion, email, id],
-    );
+    if (!nombre || !apellidos) {
+      res.status(400).json({
+        error: "Nombre y apellidos son obligatorios",
+      });
+      return;
+    }
 
-    if (result.rows.length === 0) {
+    const cliente = await ClienteModel.update(id, {
+      nombre,
+      apellidos,
+      telefono: telefono ?? null,
+      direccion: direccion ?? null,
+      email: email ?? null,
+    });
+
+    if (!cliente) {
       res.status(404).json({
         error: "Cliente no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(cliente);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -107,23 +122,21 @@ export async function putCliente(req: Request, res: Response) {
   }
 }
 
+// DELETE /clientes/:id
 export async function deleteCliente(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query(
-      "DELETE FROM clientes WHERE id = $1 RETURNING *;",
-      [id],
-    );
+    const eliminado = await ClienteModel.delete(id);
 
-    if (result.rows.length === 0) {
+    if (!eliminado) {
       res.status(404).json({
         error: "Cliente no encontrado",
       });
@@ -131,8 +144,7 @@ export async function deleteCliente(req: Request, res: Response) {
     }
 
     res.json({
-      message: "Cliente eliminado exitosamente",
-      data: result.rows[0],
+      message: "Cliente eliminado correctamente",
     });
   } catch (error: any) {
     res.status(500).json({

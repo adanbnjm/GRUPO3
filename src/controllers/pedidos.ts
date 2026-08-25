@@ -1,14 +1,16 @@
-import { pool } from "../db.js";
 import type { Request, Response } from "express";
 
+import { PedidoModel, type CreatePedidoInput } from "../models/pedidos.js";
+
+// GET /pedidos
 export async function getPedidos(req: Request, res: Response) {
   try {
-    const result = await pool.query("SELECT * FROM pedidos;");
+    const pedidos = await PedidoModel.findAll();
 
     res.json({
-      message: "Conexion exitosa a la base de datos :D",
-      total: result.rowCount,
-      data: result.rows,
+      message: "Pedidos obtenidos correctamente",
+      total: pedidos.length,
+      data: pedidos,
     });
   } catch (error: any) {
     res.status(500).json({
@@ -17,29 +19,28 @@ export async function getPedidos(req: Request, res: Response) {
   }
 }
 
+// GET /pedidos/:id
 export async function getPedidoById(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query("SELECT * FROM pedidos WHERE id = $1;", [
-      id,
-    ]);
+    const pedido = await PedidoModel.findById(id);
 
-    if (result.rows.length === 0) {
+    if (!pedido) {
       res.status(404).json({
         error: "Pedido no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(pedido);
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
@@ -47,39 +48,51 @@ export async function getPedidoById(req: Request, res: Response) {
   }
 }
 
+// POST /pedidos
 export async function postPedido(req: Request, res: Response) {
   try {
     const { total, estado, cliente_id } = req.body;
 
     if (total === undefined || !estado || cliente_id === undefined) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
+        error: "Total, estado y cliente_id son obligatorios",
       });
       return;
     }
 
-    const result = await pool.query(
-      `INSERT INTO pedidos (total, estado, cliente_id)
-       VALUES ($1, $2, $3)
-       RETURNING *;`,
-      [total, estado, cliente_id],
-    );
+    if (Number(total) < 0) {
+      res.status(400).json({
+        error: "El total no puede ser negativo",
+      });
+      return;
+    }
 
-    res.status(201).json(result.rows[0]);
+    const datos: CreatePedidoInput = {
+      total: Number(total),
+      estado,
+      cliente_id: Number(cliente_id),
+    };
+
+    const pedido = await PedidoModel.create(datos);
+
+    res.status(201).json(pedido);
   } catch (error: any) {
+    console.error("Error al crear pedido:", error);
+
     res.status(500).json({
       error: error.message,
     });
   }
 }
 
+// PUT /pedidos/:id
 export async function putPedido(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
@@ -93,48 +106,51 @@ export async function putPedido(req: Request, res: Response) {
       return;
     }
 
-    const result = await pool.query(
-      `UPDATE pedidos
-       SET total = $1,
-           estado = $2,
-           cliente_id = $3
-       WHERE id = $4
-       RETURNING *;`,
-      [total, estado, cliente_id, id],
-    );
+    if (Number(total) < 0) {
+      res.status(400).json({
+        error: "El total no puede ser negativo",
+      });
+      return;
+    }
 
-    if (result.rows.length === 0) {
+    const pedido = await PedidoModel.update(id, {
+      total: Number(total),
+      estado,
+      cliente_id: Number(cliente_id),
+    });
+
+    if (!pedido) {
       res.status(404).json({
         error: "Pedido no encontrado",
       });
       return;
     }
 
-    res.json(result.rows[0]);
+    res.json(pedido);
   } catch (error: any) {
+    console.error("Error al actualizar pedido:", error);
+
     res.status(500).json({
       error: error.message,
     });
   }
 }
 
+// DELETE /pedidos/:id
 export async function deletePedido(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       res.status(400).json({
-        error: "El ID debe ser un valor numerico",
+        error: "El ID debe ser numérico",
       });
       return;
     }
 
-    const result = await pool.query(
-      "DELETE FROM pedidos WHERE id = $1 RETURNING *;",
-      [id],
-    );
+    const eliminado = await PedidoModel.delete(id);
 
-    if (result.rows.length === 0) {
+    if (!eliminado) {
       res.status(404).json({
         error: "Pedido no encontrado",
       });
@@ -142,10 +158,11 @@ export async function deletePedido(req: Request, res: Response) {
     }
 
     res.json({
-      message: "Pedido eliminado exitosamente",
-      data: result.rows[0],
+      message: "Pedido eliminado correctamente",
     });
   } catch (error: any) {
+    console.error("Error al eliminar pedido:", error);
+
     res.status(500).json({
       error: error.message,
     });
