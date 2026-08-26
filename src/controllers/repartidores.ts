@@ -1,9 +1,8 @@
 import type { Request, Response } from "express";
+import {RepartidorModel,} from "../models/repartidores.js";
+import { createRepartidorSchema, repartidorIdSchema, updateRepartidorSchema} from "../schemas/repartidores.js";
 
-import {
-  RepartidorModel,
-  type CreateRepartidorInput,
-} from "../models/repartidores.js";
+
 // GET /repartidores
 export async function getRepartidores(req: Request, res: Response) {
   try {
@@ -36,14 +35,16 @@ export async function getRepartidorById(req: Request, res: Response) {
         required: true,
         type: 'integer'
     } */
-    const id = Number(req.params.id);
+    const resultado = repartidorIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
-      res.status(400).json({
-        error: "El ID debe ser numérico",
-      });
-      return;
-    }
+if (!resultado.success) {
+  res.status(400).json({
+    error: resultado.error.issues,
+  });
+  return;
+}
+
+const { id } = resultado.data;
 
     const repartidor = await RepartidorModel.findById(id);
 
@@ -79,23 +80,15 @@ export async function postRepartidor(req: Request, res: Response) {
             activo: true
         }
     } */
-    const { nombre, vehiculo, telefono, activo } = req.body;
+    const resultado = createRepartidorSchema.safeParse(req.body);
 
-    if (!nombre || !vehiculo || !telefono) {
-      res.status(400).json({
-        error: "Nombre, vehículo y teléfono son obligatorios",
-      });
-      return;
-    }
-
-    const datos: CreateRepartidorInput = {
-      nombre,
-      vehiculo,
-      telefono,
-      activo: activo ?? true,
-    };
-
-    const repartidor = await RepartidorModel.create(datos);
+if (!resultado.success) {
+  res.status(400).json({
+    error: resultado.error.issues,
+  });
+  return;
+}
+ const repartidor = await RepartidorModel.create(resultado.data);
 
     res.status(201).json(repartidor);
   } catch (error: any) {
@@ -127,30 +120,28 @@ export async function putRepartidor(req: Request, res: Response) {
             activo: false
         }
     } */
-    const id = Number(req.params.id);
+   const resultado = repartidorIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
-      res.status(400).json({
-        error: "El ID debe ser numérico",
-      });
-      return;
-    }
+if (!resultado.success) {
+  res.status(400).json({
+    error: resultado.error.issues,
+  });
+  return;
+}
+
+const { id } = resultado.data;
 
     const { nombre, vehiculo, telefono, activo } = req.body;
 
-    if (!nombre || !vehiculo || !telefono || activo === undefined) {
-      res.status(400).json({
-        error: "Faltan datos obligatorios",
-      });
-      return;
-    }
+   const datos = updateRepartidorSchema.safeParse(req.body);
 
-    const repartidor = await RepartidorModel.update(id, {
-      nombre,
-      vehiculo,
-      telefono,
-      activo,
-    });
+if (!datos.success) {
+  res.status(400).json({
+    error: datos.error.issues,
+  });
+  return;
+}
+   const repartidor = await RepartidorModel.update(id, datos.data);
 
     if (!repartidor) {
       res.status(404).json({
@@ -178,14 +169,16 @@ export async function deleteRepartidor(req: Request, res: Response) {
         required: true,
         type: 'integer'
     } */
-    const id = Number(req.params.id);
+   const resultado = repartidorIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
-      res.status(400).json({
-        error: "El ID debe ser numérico",
-      });
-      return;
-    }
+if (!resultado.success) {
+  res.status(400).json({
+    error: resultado.error.issues,
+  });
+  return;
+}
+
+const { id } = resultado.data;
 
     const eliminado = await RepartidorModel.delete(id);
 
