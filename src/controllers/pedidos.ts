@@ -53,24 +53,10 @@ export async function postPedido(req: Request, res: Response) {
   try {
     const { total, estado, cliente_id } = req.body;
 
-    if (total === undefined || !estado || cliente_id === undefined) {
-      res.status(400).json({
-        error: "Total, estado y cliente_id son obligatorios",
-      });
-      return;
-    }
-
-    if (Number(total) < 0) {
-      res.status(400).json({
-        error: "El total no puede ser negativo",
-      });
-      return;
-    }
-
     const datos: CreatePedidoInput = {
-      total: Number(total),
+      total,
       estado,
-      cliente_id: Number(cliente_id),
+      cliente_id,
     };
 
     const pedido = await PedidoModel.create(datos);
@@ -97,27 +83,7 @@ export async function putPedido(req: Request, res: Response) {
       return;
     }
 
-    const { total, estado, cliente_id } = req.body;
-
-    if (total === undefined || !estado || cliente_id === undefined) {
-      res.status(400).json({
-        error: "Faltan datos obligatorios",
-      });
-      return;
-    }
-
-    if (Number(total) < 0) {
-      res.status(400).json({
-        error: "El total no puede ser negativo",
-      });
-      return;
-    }
-
-    const pedido = await PedidoModel.update(id, {
-      total: Number(total),
-      estado,
-      cliente_id: Number(cliente_id),
-    });
+    const pedido = await PedidoModel.update(id, req.body);
 
     if (!pedido) {
       res.status(404).json({

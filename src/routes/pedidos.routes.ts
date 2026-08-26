@@ -7,6 +7,10 @@ import {
   putPedido,
   deletePedido,
 } from "../controllers/pedidos.js";
+import {
+  validarPedido,
+  validarPedidoUpdate,
+} from "../pedidos.middleware/pedidos.validacion.js";
 
 const router = Router();
 
@@ -79,6 +83,7 @@ router.post(
       description: 'Error al crear el pedido.'
     }
   */
+  validarPedido,
   postPedido,
 );
 
@@ -116,6 +121,7 @@ router.put(
       description: 'Error al actualizar el pedido.'
     }
   */
+  validarPedidoUpdate,
   putPedido,
 );
 

@@ -52,18 +52,26 @@ export const PedidoModel = {
     id: number,
     dato: UpdatePedidoInput,
   ): Promise<Pedido | null> => {
-    const { rows } = await pool.query(
-      `
-        UPDATE pedidos
-        SET
-          total = $1,
-          estado = $2,
-          cliente_id = $3
-        WHERE id = $4
-        RETURNING *;
-      `,
-      [dato.total, dato.estado, dato.cliente_id, id],
-    );
+    const campos = Object.keys(dato);
+
+    if (campos.length === 0) {
+      return null;
+    }
+
+    const valores = Object.values(dato);
+
+    const set = campos
+      .map((campo, index) => `${campo} = $${index + 1}`)
+      .join(", ");
+
+    const query = `
+      UPDATE pedidos
+      SET ${set}
+      WHERE id = $${valores.length + 1}
+      RETURNING *;
+    `;
+
+    const { rows } = await pool.query(query, [...valores, id]);
 
     return rows[0] || null;
   },
