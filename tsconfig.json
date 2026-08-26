@@ -14,6 +14,10 @@
     // "lib": ["esnext"],
     // "types": ["node"],
     // and npm install -D @types/node
+<<<<<<< HEAD
+=======
+    "resolveJsonModule": true,
+>>>>>>> master
 
     // Other Outputs
     "sourceMap": true,

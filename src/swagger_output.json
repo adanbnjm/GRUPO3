@@ -1,0 +1,977 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API Sistema de Pedidos Restaurante",
+    "description": "API REST para gestionar productos, clientes, repartidores y pedidos",
+    "version": "1.0.0"
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Servidor",
+      "description": "Estado del servidor y conexión con la base de datos."
+    },
+    {
+      "name": "Clientes",
+      "description": "Operaciones relacionadas con los clientes."
+    },
+    {
+      "name": "Productos",
+      "description": "Operaciones relacionadas con los productos."
+    },
+    {
+      "name": "Repartidores",
+      "description": "Operaciones relacionadas con los repartidores."
+    },
+    {
+      "name": "Pedidos",
+      "description": "Operaciones relacionadas con los pedidos."
+    },
+    {
+      "name": "Detalle de Pedidos",
+      "description": "Operaciones relacionadas con los detalles de los pedidos."
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/db-test": {
+      "get": {
+        "tags": [
+          "Servidor"
+        ],
+        "summary": "Verificar conexión con la base de datos",
+        "description": "Comprueba que el servidor puede conectarse correctamente a PostgreSQL.",
+        "responses": {
+          "200": {
+            "description": "Conexión exitosa con PostgreSQL."
+          },
+          "500": {
+            "description": "Error al conectar con la base de datos."
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "Servidor"
+        ],
+        "summary": "Verificar estado del servidor",
+        "description": "Comprueba que la API se encuentra funcionando correctamente.",
+        "responses": {
+          "200": {
+            "description": "Servidor funcionando correctamente."
+          }
+        }
+      }
+    },
+    "/productos/": {
+      "get": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Obtener todos los productos",
+        "description": "Obtiene todos los productos registrados en la base de datos.",
+        "responses": {
+          "200": {
+            "description": "Productos obtenidos correctamente."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Crear un producto",
+        "description": "Registra un nuevo producto en la base de datos.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string",
+                  "example": "Coca Cola"
+                },
+                "categoria": {
+                  "type": "string",
+                  "example": "Bebidas"
+                },
+                "precio": {
+                  "type": "number",
+                  "example": 10.5
+                },
+                "disponible": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Producto creado correctamente."
+          },
+          "400": {
+            "description": "Faltan datos obligatorios."
+          },
+          "500": {
+            "description": "Error al crear el producto."
+          }
+        }
+      }
+    },
+    "/productos/{id}": {
+      "get": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Obtener producto por ID",
+        "description": "Busca un producto específico mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del producto",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto encontrado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Producto no encontrado."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Actualizar un producto",
+        "description": "Actualiza todos los datos de un producto existente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del producto",
+            "example": 1
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string",
+                  "example": "Coca Cola 2L"
+                },
+                "categoria": {
+                  "type": "string",
+                  "example": "Bebidas"
+                },
+                "precio": {
+                  "type": "number",
+                  "example": 15.5
+                },
+                "disponible": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto actualizado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico o faltan datos obligatorios."
+          },
+          "404": {
+            "description": "Producto no encontrado."
+          },
+          "500": {
+            "description": "Error al actualizar el producto."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Productos"
+        ],
+        "summary": "Eliminar un producto",
+        "description": "Elimina un producto mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del producto",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto eliminado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Producto no encontrado."
+          },
+          "500": {
+            "description": "Error al eliminar el producto."
+          }
+        }
+      }
+    },
+    "/clientes/": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Obtener todos los clientes",
+        "description": "Obtiene la lista completa de clientes registrados.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Crear un nuevo cliente",
+        "description": "Registra un nuevo cliente en la base de datos.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "description": "Datos del nuevo cliente",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string",
+                  "example": "Juan"
+                },
+                "apellidos": {
+                  "type": "string",
+                  "example": "Pérez"
+                },
+                "telefono": {
+                  "type": "string",
+                  "example": "70012345"
+                },
+                "direccion": {
+                  "type": "string",
+                  "example": "Av. Principal #123"
+                },
+                "email": {
+                  "type": "string",
+                  "example": "juan@gmail.com"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Cliente creado correctamente."
+          },
+          "400": {
+            "description": "Nombre y apellidos son obligatorios."
+          },
+          "500": {
+            "description": "Error al crear el cliente."
+          }
+        }
+      }
+    },
+    "/clientes/{id}": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Obtener cliente por ID",
+        "description": "Busca un cliente específico mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del cliente"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Actualizar cliente",
+        "description": "Actualiza los datos de un cliente existente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "example": "any"
+                },
+                "apellidos": {
+                  "example": "any"
+                },
+                "telefono": {
+                  "example": "any"
+                },
+                "direccion": {
+                  "example": "any"
+                },
+                "email": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Eliminar cliente",
+        "description": "Elimina un cliente mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/repartidores/": {
+      "get": {
+        "tags": [
+          "Repartidores"
+        ],
+        "summary": "Obtener todos los repartidores",
+        "description": "Retorna todos los repartidores registrados.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Repartidores"
+        ],
+        "summary": "Crear un repartidor",
+        "description": "Registra un nuevo repartidor.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string",
+                  "example": "Juan Pérez"
+                },
+                "vehiculo": {
+                  "type": "string",
+                  "example": "Motocicleta Honda"
+                },
+                "telefono": {
+                  "type": "string",
+                  "example": "70012345"
+                },
+                "activo": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/repartidores/{id}": {
+      "get": {
+        "tags": [
+          "Repartidores"
+        ],
+        "summary": "Obtener repartidor por ID",
+        "description": "Busca un repartidor mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del repartidor",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Repartidores"
+        ],
+        "summary": "Actualizar un repartidor",
+        "description": "Modifica los datos de un repartidor existente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "example": 1
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "example": "any"
+                },
+                "vehiculo": {
+                  "example": "any"
+                },
+                "telefono": {
+                  "example": "any"
+                },
+                "activo": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Repartidores"
+        ],
+        "summary": "Eliminar un repartidor",
+        "description": "Elimina un repartidor mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/pedidos/": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Obtener todos los pedidos",
+        "description": "Obtiene todos los pedidos registrados.",
+        "responses": {
+          "200": {
+            "description": "Pedidos obtenidos correctamente."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Crear un pedido",
+        "description": "Crea un nuevo pedido.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "total": {
+                  "type": "number",
+                  "example": 1500.5
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "pendiente"
+                },
+                "cliente_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pedido creado correctamente."
+          },
+          "400": {
+            "description": "Faltan datos obligatorios."
+          },
+          "500": {
+            "description": "Error al crear el pedido."
+          }
+        }
+      }
+    },
+    "/pedidos/{id}": {
+      "get": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Obtener un pedido por ID",
+        "description": "Obtiene un pedido específico mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del pedido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido encontrado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Pedido no encontrado."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Actualizar un pedido",
+        "description": "Actualiza un pedido existente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del pedido"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "total": {
+                  "type": "number",
+                  "example": 1500.5
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "pendiente"
+                },
+                "cliente_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido actualizado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Pedido no encontrado."
+          },
+          "500": {
+            "description": "Error al actualizar el pedido."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pedidos"
+        ],
+        "summary": "Eliminar un pedido",
+        "description": "Elimina un pedido mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del pedido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido eliminado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Pedido no encontrado."
+          },
+          "500": {
+            "description": "Error al eliminar el pedido."
+          }
+        }
+      }
+    },
+    "/detalle-pedidos/": {
+      "get": {
+        "tags": [
+          "Detalle de Pedidos"
+        ],
+        "summary": "Obtener todos los detalles",
+        "description": "Obtiene todos los detalles de pedidos registrados.",
+        "responses": {
+          "200": {
+            "description": "Detalles obtenidos correctamente."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Detalle de Pedidos"
+        ],
+        "summary": "Crear detalle de pedido",
+        "description": "Registra un nuevo detalle asociado a un pedido, producto y repartidor.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "cantidad": {
+                  "type": "number",
+                  "example": 2
+                },
+                "precio_unitario": {
+                  "type": "number",
+                  "example": 100
+                },
+                "pedido_id": {
+                  "type": "number",
+                  "example": 1
+                },
+                "producto_id": {
+                  "type": "number",
+                  "example": 1
+                },
+                "repartidores_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Detalle creado correctamente."
+          },
+          "400": {
+            "description": "Faltan datos obligatorios."
+          },
+          "500": {
+            "description": "Error al crear el detalle."
+          }
+        }
+      }
+    },
+    "/detalle-pedidos/{id}": {
+      "get": {
+        "tags": [
+          "Detalle de Pedidos"
+        ],
+        "summary": "Obtener detalle por ID",
+        "description": "Obtiene un detalle específico mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del detalle"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle encontrado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Detalle no encontrado."
+          },
+          "500": {
+            "description": "Error al consultar la base de datos."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Detalle de Pedidos"
+        ],
+        "summary": "Actualizar detalle de pedido",
+        "description": "Actualiza un detalle de pedido existente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del detalle"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "cantidad": {
+                  "type": "number",
+                  "example": 3
+                },
+                "precio_unitario": {
+                  "type": "number",
+                  "example": 120
+                },
+                "pedido_id": {
+                  "type": "number",
+                  "example": 1
+                },
+                "producto_id": {
+                  "type": "number",
+                  "example": 2
+                },
+                "repartidores_id": {
+                  "type": "number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle actualizado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Detalle no encontrado."
+          },
+          "500": {
+            "description": "Error al actualizar el detalle."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Detalle de Pedidos"
+        ],
+        "summary": "Eliminar detalle de pedido",
+        "description": "Elimina un detalle de pedido mediante su ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "ID del detalle"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle eliminado correctamente."
+          },
+          "400": {
+            "description": "El ID debe ser numérico."
+          },
+          "404": {
+            "description": "Detalle no encontrado."
+          },
+          "500": {
+            "description": "Error al eliminar el detalle."
+          }
+        }
+      }
+    }
+  }
+}
