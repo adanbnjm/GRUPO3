@@ -1,6 +1,5 @@
 import { pool } from "../config/database.js";
 
-// TIPADO DE LA TABLA
 export interface DetallePedido {
   id: number;
   cantidad: number;
@@ -10,25 +9,63 @@ export interface DetallePedido {
   repartidores_id: number;
 }
 
-// TYPES
 export type CreateDetallePedidoInput = Omit<DetallePedido, "id">;
+
 export type UpdateDetallePedidoInput = Partial<CreateDetallePedidoInput>;
 
-// MODELO
 export const DetallePedidoModel = {
   // Obtener todos
   findAll: async (): Promise<DetallePedido[]> => {
     const { rows } = await pool.query(
-      "SELECT * FROM detalle_pedidos ORDER BY id ASC;",
+      `
+      SELECT *
+      FROM detalle_pedidos
+      ORDER BY id ASC;
+      `,
     );
 
     return rows;
   },
 
-  // Obtener por ID
+  // Obtener detalles paginados
+  findPaginated: async (
+    limit: number,
+    offset: number,
+  ): Promise<DetallePedido[]> => {
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM detalle_pedidos
+      ORDER BY id ASC
+      LIMIT $1
+      OFFSET $2;
+      `,
+      [limit, offset],
+    );
+
+    return rows;
+  },
+
+  // Contar detalles
+  count: async (): Promise<number> => {
+    const { rows } = await pool.query(
+      `
+      SELECT COUNT(*)::int AS total
+      FROM detalle_pedidos;
+      `,
+    );
+
+    return rows[0].total;
+  },
+
+  // Buscar por ID
   findById: async (id: number): Promise<DetallePedido | null> => {
     const { rows } = await pool.query(
-      "SELECT * FROM detalle_pedidos WHERE id = $1;",
+      `
+      SELECT *
+      FROM detalle_pedidos
+      WHERE id = $1;
+      `,
       [id],
     );
 
@@ -37,35 +74,28 @@ export const DetallePedidoModel = {
 
   // Crear
   create: async (dato: CreateDetallePedidoInput): Promise<DetallePedido> => {
-    const {
-      cantidad,
-      precio_unitario,
-      pedido_id,
-      producto_id,
-      repartidores_id,
-    } = dato;
-
-    const query = `
+    const { rows } = await pool.query(
+      `
       INSERT INTO detalle_pedidos
-        (
-          cantidad,
-          precio_unitario,
-          pedido_id,
-          producto_id,
-          repartidores_id
-        )
+      (
+        cantidad,
+        precio_unitario,
+        pedido_id,
+        producto_id,
+        repartidores_id
+      )
       VALUES
-        ($1, $2, $3, $4, $5)
+      ($1, $2, $3, $4, $5)
       RETURNING *;
-    `;
-
-    const { rows } = await pool.query(query, [
-      cantidad,
-      precio_unitario,
-      pedido_id,
-      producto_id,
-      repartidores_id,
-    ]);
+      `,
+      [
+        dato.cantidad,
+        dato.precio_unitario,
+        dato.pedido_id,
+        dato.producto_id,
+        dato.repartidores_id,
+      ],
+    );
 
     return rows[0];
   },
@@ -75,26 +105,26 @@ export const DetallePedidoModel = {
     id: number,
     dato: UpdateDetallePedidoInput,
   ): Promise<DetallePedido | null> => {
+    const campos = Object.keys(dato);
+
+    if (campos.length === 0) {
+      return null;
+    }
+
+    const valores = Object.values(dato);
+
+    const set = campos
+      .map((campo, index) => `${campo} = $${index + 1}`)
+      .join(", ");
+
     const { rows } = await pool.query(
       `
-        UPDATE detalle_pedidos
-        SET
-          cantidad = $1,
-          precio_unitario = $2,
-          pedido_id = $3,
-          producto_id = $4,
-          repartidores_id = $5
-        WHERE id = $6
-        RETURNING *;
+      UPDATE detalle_pedidos
+      SET ${set}
+      WHERE id = $${valores.length + 1}
+      RETURNING *;
       `,
-      [
-        dato.cantidad,
-        dato.precio_unitario,
-        dato.pedido_id,
-        dato.producto_id,
-        dato.repartidores_id,
-        id,
-      ],
+      [...valores, id],
     );
 
     return rows[0] || null;
@@ -103,7 +133,10 @@ export const DetallePedidoModel = {
   // Eliminar
   delete: async (id: number): Promise<boolean> => {
     const { rowCount } = await pool.query(
-      "DELETE FROM detalle_pedidos WHERE id = $1;",
+      `
+      DELETE FROM detalle_pedidos
+      WHERE id = $1;
+      `,
       [id],
     );
 

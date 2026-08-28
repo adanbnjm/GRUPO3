@@ -21,6 +21,77 @@ export const PedidoModel = {
     return rows;
   },
 
+  // Obtener por estado
+  findByEstado: async (estado: string): Promise<Pedido[]> => {
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM pedidos
+      WHERE LOWER(estado) = LOWER($1)
+      ORDER BY id ASC;
+      `,
+      [estado],
+    );
+
+    return rows;
+  },
+
+  // Obtener pedidos paginados
+  findPaginated: async (
+    limit: number,
+    offset: number,
+    estado?: string,
+  ): Promise<Pedido[]> => {
+    let query = `
+      SELECT *
+      FROM pedidos
+    `;
+
+    const valores: unknown[] = [];
+
+    if (estado) {
+      query += `
+        WHERE LOWER(estado) = LOWER($1)
+      `;
+
+      valores.push(estado);
+    }
+
+    query += `
+      ORDER BY id ASC
+      LIMIT $${valores.length + 1}
+      OFFSET $${valores.length + 2};
+    `;
+
+    valores.push(limit, offset);
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows;
+  },
+
+  // Contar pedidos
+  count: async (estado?: string): Promise<number> => {
+    let query = `
+      SELECT COUNT(*)::int AS total
+      FROM pedidos
+    `;
+
+    const valores: unknown[] = [];
+
+    if (estado) {
+      query += `
+        WHERE LOWER(estado) = LOWER($1)
+      `;
+
+      valores.push(estado);
+    }
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows[0].total;
+  },
+
   // Obtener por ID
   findById: async (id: number): Promise<Pedido | null> => {
     const { rows } = await pool.query("SELECT * FROM pedidos WHERE id = $1;", [

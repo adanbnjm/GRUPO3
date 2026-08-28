@@ -5,14 +5,56 @@ import {
   type CreateProductoInput,
 } from "../models/productos.js";
 
+import {
+  createProductoSchema,
+  updateProductoSchema,
+  productoIdSchema,
+} from "../schemas/productos.js";
+
 // GET /productos
 export async function getProductos(req: Request, res: Response) {
   try {
-    const productos = await ProductoModel.findAll();
+    const categoria =
+      typeof req.query.categoria === "string"
+        ? req.query.categoria.trim()
+        : undefined;
+
+    const page = Number(req.query.page) || 1;
+
+    const limit = Number(req.query.limit) || 10;
+
+    if (!Number.isInteger(page) || page < 1) {
+      res.status(400).json({
+        error: "page debe ser un número entero mayor a 0",
+      });
+      return;
+    }
+
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      res.status(400).json({
+        error: "limit debe ser un número entre 1 y 100",
+      });
+      return;
+    }
+
+    const offset = (page - 1) * limit;
+
+    const productos = await ProductoModel.findPaginated(
+      limit,
+      offset,
+      categoria,
+    );
+
+    const total = await ProductoModel.count(categoria);
+
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       message: "Productos obtenidos correctamente",
-      total: productos.length,
+      page,
+      limit,
+      total,
+      totalPages,
       data: productos,
     });
   } catch (error: any) {
@@ -25,16 +67,18 @@ export async function getProductos(req: Request, res: Response) {
 }
 
 // GET /productos/:id
-export async function getProductosdeId(req: Request, res: Response) {
+export async function getProductoById(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = productoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser un valor numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const producto = await ProductoModel.findById(id);
 
@@ -47,6 +91,8 @@ export async function getProductosdeId(req: Request, res: Response) {
 
     res.json(producto);
   } catch (error: any) {
+    console.error("Error al consultar producto:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -56,26 +102,16 @@ export async function getProductosdeId(req: Request, res: Response) {
 // POST /productos
 export async function postProducto(req: Request, res: Response) {
   try {
-    const { nombre, categoria, precio, disponible } = req.body;
+    const resultado = createProductoSchema.safeParse(req.body);
 
-    if (
-      !nombre ||
-      !categoria ||
-      precio === undefined ||
-      disponible === undefined
-    ) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
+        error: resultado.error.issues,
       });
       return;
     }
 
-    const datos: CreateProductoInput = {
-      nombre,
-      categoria,
-      precio,
-      disponible,
-    };
+    const datos: CreateProductoInput = resultado.data;
 
     const producto = await ProductoModel.create(datos);
 
@@ -92,35 +128,59 @@ export async function postProducto(req: Request, res: Response) {
 // PUT /productos/:id
 export async function putProducto(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultadoId = productoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultadoId.success) {
       res.status(400).json({
-        error: "El ID debe ser un valor numérico",
+        error: resultadoId.error.issues,
       });
       return;
     }
 
-    const { nombre, categoria, precio, disponible } = req.body;
+    const resultadoDatos = updateProductoSchema.safeParse(req.body);
 
-    if (
-      !nombre ||
-      !categoria ||
-      precio === undefined ||
-      disponible === undefined
-    ) {
+    if (!resultadoDatos.success) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
+        error: resultadoDatos.error.issues,
       });
       return;
     }
 
-    const producto = await ProductoModel.update(id, {
-      nombre,
-      categoria,
-      precio,
-      disponible,
-    });
+    const datos = resultadoDatos.data;
+
+    if (Object.keys(datos).length === 0) {
+      res.status(400).json({
+        error: "Debes enviar al menos un campo para actualizar",
+      });
+      return;
+    }
+
+    const { id } = resultadoId.data;
+
+    const datosUpdate: {
+      nombre?: string;
+      categoria?: string;
+      precio?: number;
+      disponible?: boolean;
+    } = {};
+
+    if (datos.nombre !== undefined) {
+      datosUpdate.nombre = datos.nombre;
+    }
+
+    if (datos.categoria !== undefined) {
+      datosUpdate.categoria = datos.categoria;
+    }
+
+    if (datos.precio !== undefined) {
+      datosUpdate.precio = datos.precio;
+    }
+
+    if (datos.disponible !== undefined) {
+      datosUpdate.disponible = datos.disponible;
+    }
+
+    const producto = await ProductoModel.update(id, datosUpdate);
 
     if (!producto) {
       res.status(404).json({
@@ -142,14 +202,16 @@ export async function putProducto(req: Request, res: Response) {
 // DELETE /productos/:id
 export async function deleteProducto(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = productoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser un valor numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const eliminado = await ProductoModel.delete(id);
 
@@ -161,7 +223,7 @@ export async function deleteProducto(req: Request, res: Response) {
     }
 
     res.json({
-      message: "Producto eliminado exitosamente",
+      message: "Producto eliminado correctamente",
     });
   } catch (error: any) {
     console.error("Error al eliminar producto:", error);

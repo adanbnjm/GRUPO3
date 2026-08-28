@@ -25,6 +25,34 @@ export const ClienteModel = {
     return rows;
   },
 
+  // Obtener clientes paginados
+  findPaginated: async (limit: number, offset: number): Promise<Cliente[]> => {
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM clientes
+      ORDER BY id ASC
+      LIMIT $1
+      OFFSET $2;
+      `,
+      [limit, offset],
+    );
+
+    return rows;
+  },
+
+  // Contar clientes
+  count: async (): Promise<number> => {
+    const { rows } = await pool.query(
+      `
+      SELECT COUNT(*)::int AS total
+      FROM clientes;
+      `,
+    );
+
+    return rows[0].total;
+  },
+
   // Obtener por ID
   findById: async (id: number): Promise<Cliente | null> => {
     const { rows } = await pool.query("SELECT * FROM clientes WHERE id = $1;", [
@@ -36,22 +64,26 @@ export const ClienteModel = {
 
   // Crear
   create: async (dato: CreateClienteInput): Promise<Cliente> => {
-    const { nombre, apellidos, telefono, direccion, email } = dato;
-
     const query = `
       INSERT INTO clientes
-        (nombre, apellidos, telefono, direccion, email)
+        (
+          nombre,
+          apellidos,
+          telefono,
+          direccion,
+          email
+        )
       VALUES
         ($1, $2, $3, $4, $5)
       RETURNING *;
     `;
 
     const { rows } = await pool.query(query, [
-      nombre,
-      apellidos,
-      telefono,
-      direccion,
-      email,
+      dato.nombre,
+      dato.apellidos,
+      dato.telefono,
+      dato.direccion,
+      dato.email,
     ]);
 
     return rows[0];
@@ -62,27 +94,26 @@ export const ClienteModel = {
     id: number,
     dato: UpdateClienteInput,
   ): Promise<Cliente | null> => {
-    const { rows } = await pool.query(
-      `
-        UPDATE clientes
-        SET
-          nombre = $1,
-          apellidos = $2,
-          telefono = $3,
-          direccion = $4,
-          email = $5
-        WHERE id = $6
-        RETURNING *;
-      `,
-      [
-        dato.nombre,
-        dato.apellidos,
-        dato.telefono,
-        dato.direccion,
-        dato.email,
-        id,
-      ],
-    );
+    const campos = Object.keys(dato);
+
+    if (campos.length === 0) {
+      return null;
+    }
+
+    const valores = Object.values(dato);
+
+    const set = campos
+      .map((campo, index) => `${campo} = $${index + 1}`)
+      .join(", ");
+
+    const query = `
+      UPDATE clientes
+      SET ${set}
+      WHERE id = $${valores.length + 1}
+      RETURNING *;
+    `;
+
+    const { rows } = await pool.query(query, [...valores, id]);
 
     return rows[0] || null;
   },

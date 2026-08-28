@@ -8,6 +8,12 @@ import {
   deleteDetallePedido,
 } from "../controllers/detallePedidos.js";
 
+import {
+  validarDetallePedido,
+  validarDetallePedidoUpdate,
+  validarDetallePedidoId,
+} from "../middlewares/detallePedidos.validacion.js";
+
 const router = Router();
 
 router.get(
@@ -36,7 +42,8 @@ router.get(
       in: 'path',
       required: true,
       type: 'integer',
-      description: 'ID del detalle'
+      description: 'ID del detalle',
+      example: 1
     }
     #swagger.responses[200] = {
       description: 'Detalle encontrado correctamente.'
@@ -51,6 +58,7 @@ router.get(
       description: 'Error al consultar la base de datos.'
     }
   */
+  validarDetallePedidoId,
   getDetallePedidoById,
 );
 
@@ -63,6 +71,7 @@ router.post(
     #swagger.parameters['body'] = {
       in: 'body',
       required: true,
+      description: 'Datos del detalle de pedido',
       schema: {
         cantidad: 2,
         precio_unitario: 100,
@@ -75,12 +84,13 @@ router.post(
       description: 'Detalle creado correctamente.'
     }
     #swagger.responses[400] = {
-      description: 'Faltan datos obligatorios.'
+      description: 'Datos del detalle de pedido inválidos.'
     }
     #swagger.responses[500] = {
       description: 'Error al crear el detalle.'
     }
   */
+  validarDetallePedido,
   postDetallePedido,
 );
 
@@ -94,11 +104,13 @@ router.put(
       in: 'path',
       required: true,
       type: 'integer',
-      description: 'ID del detalle'
+      description: 'ID del detalle',
+      example: 1
     }
     #swagger.parameters['body'] = {
       in: 'body',
       required: true,
+      description: 'Datos a actualizar',
       schema: {
         cantidad: 3,
         precio_unitario: 120,
@@ -111,7 +123,7 @@ router.put(
       description: 'Detalle actualizado correctamente.'
     }
     #swagger.responses[400] = {
-      description: 'El ID debe ser numérico.'
+      description: 'Datos inválidos o ID incorrecto.'
     }
     #swagger.responses[404] = {
       description: 'Detalle no encontrado.'
@@ -120,6 +132,8 @@ router.put(
       description: 'Error al actualizar el detalle.'
     }
   */
+  validarDetallePedidoId,
+  validarDetallePedidoUpdate,
   putDetallePedido,
 );
 
@@ -133,7 +147,8 @@ router.delete(
       in: 'path',
       required: true,
       type: 'integer',
-      description: 'ID del detalle'
+      description: 'ID del detalle',
+      example: 1
     }
     #swagger.responses[200] = {
       description: 'Detalle eliminado correctamente.'
@@ -148,6 +163,7 @@ router.delete(
       description: 'Error al eliminar el detalle.'
     }
   */
+  validarDetallePedidoId,
   deleteDetallePedido,
 );
 

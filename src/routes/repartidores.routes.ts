@@ -8,6 +8,12 @@ import {
   deleteRepartidor,
 } from "../controllers/repartidores.js";
 
+import {
+  validarRepartidor,
+  validarRepartidorId,
+  validarRepartidorUpdate,
+} from "../middlewares/repartidores.validacion.js";
+
 const router = Router();
 
 router.get(
@@ -34,6 +40,7 @@ router.get(
       example: 1
     }
   */
+  validarRepartidorId,
   getRepartidorById,
 );
 
@@ -53,7 +60,14 @@ router.post(
         activo: true
       }
     }
+    #swagger.responses[201] = {
+      description: 'Repartidor creado correctamente.'
+    }
+    #swagger.responses[400] = {
+      description: 'Datos inválidos.'
+    }
   */
+  validarRepartidor,
   postRepartidor,
 );
 
@@ -62,14 +76,27 @@ router.put(
   /*
     #swagger.tags = ['Repartidores']
     #swagger.summary = 'Actualizar un repartidor'
-    #swagger.description = 'Modifica los datos de un repartidor existente.'
+    #swagger.description = 'Actualiza uno o varios datos de un repartidor existente.'
     #swagger.parameters['id'] = {
       in: 'path',
       required: true,
       type: 'integer',
+      description: 'ID del repartidor',
       example: 1
     }
+    #swagger.parameters['body'] = {
+      in: 'body',
+      required: true,
+      schema: {
+        nombre: 'Juan Pérez Modificado',
+        vehiculo: 'Automóvil',
+        telefono: '70099999',
+        activo: false
+      }
+    }
   */
+  validarRepartidorId,
+  validarRepartidorUpdate,
   putRepartidor,
 );
 
@@ -83,9 +110,11 @@ router.delete(
       in: 'path',
       required: true,
       type: 'integer',
+      description: 'ID del repartidor',
       example: 1
     }
   */
+  validarRepartidorId,
   deleteRepartidor,
 );
 

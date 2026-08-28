@@ -2,11 +2,17 @@ import { Router } from "express";
 
 import {
   getProductos,
-  getProductosdeId,
+  getProductoById,
   postProducto,
   putProducto,
   deleteProducto,
 } from "../controllers/productos.js";
+
+import {
+  validarProducto,
+  validarProductoId,
+  validarProductoUpdate,
+} from "../middlewares/productos.validacion.js";
 
 const router = Router();
 
@@ -52,7 +58,8 @@ router.get(
       description: 'Error al consultar la base de datos.'
     }
   */
-  getProductosdeId,
+  validarProductoId,
+  getProductoById,
 );
 
 router.post(
@@ -75,12 +82,13 @@ router.post(
       description: 'Producto creado correctamente.'
     }
     #swagger.responses[400] = {
-      description: 'Faltan datos obligatorios.'
+      description: 'Datos inválidos.'
     }
     #swagger.responses[500] = {
       description: 'Error al crear el producto.'
     }
   */
+  validarProducto,
   postProducto,
 );
 
@@ -89,7 +97,7 @@ router.put(
   /*
     #swagger.tags = ['Productos']
     #swagger.summary = 'Actualizar un producto'
-    #swagger.description = 'Actualiza todos los datos de un producto existente.'
+    #swagger.description = 'Actualiza uno o varios datos de un producto existente.'
     #swagger.parameters['id'] = {
       in: 'path',
       required: true,
@@ -111,7 +119,7 @@ router.put(
       description: 'Producto actualizado correctamente.'
     }
     #swagger.responses[400] = {
-      description: 'El ID debe ser numérico o faltan datos obligatorios.'
+      description: 'Datos inválidos.'
     }
     #swagger.responses[404] = {
       description: 'Producto no encontrado.'
@@ -120,6 +128,8 @@ router.put(
       description: 'Error al actualizar el producto.'
     }
   */
+  validarProductoId,
+  validarProductoUpdate,
   putProducto,
 );
 
@@ -149,6 +159,7 @@ router.delete(
       description: 'Error al eliminar el producto.'
     }
   */
+  validarProductoId,
   deleteProducto,
 );
 

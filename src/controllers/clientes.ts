@@ -2,17 +2,52 @@ import type { Request, Response } from "express";
 
 import { ClienteModel, type CreateClienteInput } from "../models/clientes.js";
 
+import {
+  createClienteSchema,
+  updateClienteSchema,
+  clienteIdSchema,
+} from "../schemas/clientes.js";
+
 // GET /clientes
 export async function getClientes(req: Request, res: Response) {
   try {
-    const clientes = await ClienteModel.findAll();
+    const page = Number(req.query.page) || 1;
+
+    const limit = Number(req.query.limit) || 10;
+
+    if (!Number.isInteger(page) || page < 1) {
+      res.status(400).json({
+        error: "page debe ser un número entero mayor a 0",
+      });
+      return;
+    }
+
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      res.status(400).json({
+        error: "limit debe ser un número entre 1 y 100",
+      });
+      return;
+    }
+
+    const offset = (page - 1) * limit;
+
+    const clientes = await ClienteModel.findPaginated(limit, offset);
+
+    const total = await ClienteModel.count();
+
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       message: "Clientes obtenidos correctamente",
-      total: clientes.length,
+      page,
+      limit,
+      total,
+      totalPages,
       data: clientes,
     });
   } catch (error: any) {
+    console.error("Error al consultar clientes:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -22,14 +57,16 @@ export async function getClientes(req: Request, res: Response) {
 // GET /clientes/:id
 export async function getClienteById(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = clienteIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const cliente = await ClienteModel.findById(id);
 
@@ -42,6 +79,8 @@ export async function getClienteById(req: Request, res: Response) {
 
     res.json(cliente);
   } catch (error: any) {
+    console.error("Error al consultar cliente:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -51,27 +90,29 @@ export async function getClienteById(req: Request, res: Response) {
 // POST /clientes
 export async function postCliente(req: Request, res: Response) {
   try {
-    const { nombre, apellidos, telefono, direccion, email } = req.body;
+    const resultado = createClienteSchema.safeParse(req.body);
 
-    if (!nombre || !apellidos) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "Nombre y apellidos son obligatorios",
+        error: resultado.error.issues,
       });
       return;
     }
 
     const datos: CreateClienteInput = {
-      nombre,
-      apellidos,
-      telefono: telefono ?? null,
-      direccion: direccion ?? null,
-      email: email ?? null,
+      nombre: resultado.data.nombre,
+      apellidos: resultado.data.apellidos,
+      telefono: resultado.data.telefono ?? null,
+      direccion: resultado.data.direccion ?? null,
+      email: resultado.data.email ?? null,
     };
 
     const cliente = await ClienteModel.create(datos);
 
     res.status(201).json(cliente);
   } catch (error: any) {
+    console.error("Error al crear cliente:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -81,31 +122,64 @@ export async function postCliente(req: Request, res: Response) {
 // PUT /clientes/:id
 export async function putCliente(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultadoId = clienteIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultadoId.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultadoId.error.issues,
       });
       return;
     }
 
-    const { nombre, apellidos, telefono, direccion, email } = req.body;
+    const resultadoDatos = updateClienteSchema.safeParse(req.body);
 
-    if (!nombre || !apellidos) {
+    if (!resultadoDatos.success) {
       res.status(400).json({
-        error: "Nombre y apellidos son obligatorios",
+        error: resultadoDatos.error.issues,
       });
       return;
     }
 
-    const cliente = await ClienteModel.update(id, {
-      nombre,
-      apellidos,
-      telefono: telefono ?? null,
-      direccion: direccion ?? null,
-      email: email ?? null,
-    });
+    const datos = resultadoDatos.data;
+
+    if (Object.keys(datos).length === 0) {
+      res.status(400).json({
+        error: "Debes enviar al menos un campo para actualizar",
+      });
+      return;
+    }
+
+    const datosUpdate: {
+      nombre?: string;
+      apellidos?: string;
+      telefono?: string | null;
+      direccion?: string | null;
+      email?: string | null;
+    } = {};
+
+    if (datos.nombre !== undefined) {
+      datosUpdate.nombre = datos.nombre;
+    }
+
+    if (datos.apellidos !== undefined) {
+      datosUpdate.apellidos = datos.apellidos;
+    }
+
+    if (datos.telefono !== undefined) {
+      datosUpdate.telefono = datos.telefono;
+    }
+
+    if (datos.direccion !== undefined) {
+      datosUpdate.direccion = datos.direccion;
+    }
+
+    if (datos.email !== undefined) {
+      datosUpdate.email = datos.email;
+    }
+
+    const { id } = resultadoId.data;
+
+    const cliente = await ClienteModel.update(id, datosUpdate);
 
     if (!cliente) {
       res.status(404).json({
@@ -116,6 +190,8 @@ export async function putCliente(req: Request, res: Response) {
 
     res.json(cliente);
   } catch (error: any) {
+    console.error("Error al actualizar cliente:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -125,14 +201,16 @@ export async function putCliente(req: Request, res: Response) {
 // DELETE /clientes/:id
 export async function deleteCliente(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = clienteIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const eliminado = await ClienteModel.delete(id);
 
@@ -147,6 +225,8 @@ export async function deleteCliente(req: Request, res: Response) {
       message: "Cliente eliminado correctamente",
     });
   } catch (error: any) {
+    console.error("Error al eliminar cliente:", error);
+
     res.status(500).json({
       error: error.message,
     });

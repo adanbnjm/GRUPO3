@@ -9,13 +9,13 @@ export interface Producto {
   disponible: boolean;
 }
 
-// TYPES PARA CREAR Y ACTUALIZAR
+// TYPES
 export type CreateProductoInput = Omit<Producto, "id">;
 export type UpdateProductoInput = Partial<CreateProductoInput>;
 
-// FUNCIONES QUE CONSULTAN A LA BASE DE DATOS
+// MODELO
 export const ProductoModel = {
-  // Obtener todos los productos
+  // Obtener todos
   findAll: async (): Promise<Producto[]> => {
     const { rows } = await pool.query(
       "SELECT * FROM productos ORDER BY id ASC;",
@@ -24,7 +24,62 @@ export const ProductoModel = {
     return rows;
   },
 
-  // Obtener un producto por ID
+  // Obtener productos paginados
+  findPaginated: async (
+    limit: number,
+    offset: number,
+    categoria?: string,
+  ): Promise<Producto[]> => {
+    let query = `
+      SELECT *
+      FROM productos
+    `;
+
+    const valores: unknown[] = [];
+
+    if (categoria) {
+      query += `
+        WHERE LOWER(categoria) = LOWER($1)
+      `;
+      valores.push(categoria);
+    }
+
+    query += `
+      ORDER BY id ASC
+      LIMIT $${valores.length + 1}
+      OFFSET $${valores.length + 2};
+    `;
+
+    valores.push(limit, offset);
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows;
+  },
+
+  // Contar productos
+  count: async (categoria?: string): Promise<number> => {
+    let query = `
+      SELECT COUNT(*)::int AS total
+      FROM productos
+    `;
+
+    const valores: unknown[] = [];
+
+    if (categoria) {
+      query += `
+        WHERE LOWER(categoria) = LOWER($1)
+      `;
+
+      valores.push(categoria);
+    }
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows[0].total;
+  },
+
+  // Obtener por ID
   findById: async (id: number): Promise<Producto | null> => {
     const { rows } = await pool.query(
       "SELECT * FROM productos WHERE id = $1;",
@@ -34,7 +89,7 @@ export const ProductoModel = {
     return rows[0] || null;
   },
 
-  // Crear un producto
+  // Crear
   create: async (dato: CreateProductoInput): Promise<Producto> => {
     const { nombre, categoria, precio, disponible } = dato;
 
@@ -56,29 +111,36 @@ export const ProductoModel = {
     return rows[0];
   },
 
-  // Actualizar un producto
+  // Actualizar
   update: async (
     id: number,
     dato: UpdateProductoInput,
   ): Promise<Producto | null> => {
-    const { rows } = await pool.query(
-      `
-        UPDATE productos
-        SET
-          nombre = $1,
-          categoria = $2,
-          precio = $3,
-          disponible = $4
-        WHERE id = $5
-        RETURNING *;
-      `,
-      [dato.nombre, dato.categoria, dato.precio, dato.disponible, id],
-    );
+    const campos = Object.keys(dato);
+
+    if (campos.length === 0) {
+      return null;
+    }
+
+    const valores = Object.values(dato);
+
+    const set = campos
+      .map((campo, index) => `${campo} = $${index + 1}`)
+      .join(", ");
+
+    const query = `
+      UPDATE productos
+      SET ${set}
+      WHERE id = $${valores.length + 1}
+      RETURNING *;
+    `;
+
+    const { rows } = await pool.query(query, [...valores, id]);
 
     return rows[0] || null;
   },
 
-  // Eliminar un producto
+  // Eliminar
   delete: async (id: number): Promise<boolean> => {
     const { rowCount } = await pool.query(
       "DELETE FROM productos WHERE id = $1;",

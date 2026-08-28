@@ -5,17 +5,52 @@ import {
   type CreateDetallePedidoInput,
 } from "../models/detallePedidos.js";
 
+import {
+  createDetallePedidoSchema,
+  updateDetallePedidoSchema,
+  detallePedidoIdSchema,
+} from "../schemas/detallePedidos.js";
+
 // GET /detalle-pedidos
 export async function getDetallePedidos(req: Request, res: Response) {
   try {
-    const detalles = await DetallePedidoModel.findAll();
+    const page = Number(req.query.page) || 1;
+
+    const limit = Number(req.query.limit) || 10;
+
+    if (!Number.isInteger(page) || page < 1) {
+      res.status(400).json({
+        error: "page debe ser un número entero mayor a 0",
+      });
+      return;
+    }
+
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      res.status(400).json({
+        error: "limit debe ser un número entre 1 y 100",
+      });
+      return;
+    }
+
+    const offset = (page - 1) * limit;
+
+    const detalles = await DetallePedidoModel.findPaginated(limit, offset);
+
+    const total = await DetallePedidoModel.count();
+
+    const totalPages = Math.ceil(total / limit);
 
     res.json({
       message: "Detalles de pedidos obtenidos correctamente",
-      total: detalles.length,
+      page,
+      limit,
+      total,
+      totalPages,
       data: detalles,
     });
   } catch (error: any) {
+    console.error("Error al consultar detalles:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -25,14 +60,16 @@ export async function getDetallePedidos(req: Request, res: Response) {
 // GET /detalle-pedidos/:id
 export async function getDetallePedidoById(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = detallePedidoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const detalle = await DetallePedidoModel.findById(id);
 
@@ -45,6 +82,8 @@ export async function getDetallePedidoById(req: Request, res: Response) {
 
     res.json(detalle);
   } catch (error: any) {
+    console.error("Error al consultar detalle:", error);
+
     res.status(500).json({
       error: error.message,
     });
@@ -54,47 +93,21 @@ export async function getDetallePedidoById(req: Request, res: Response) {
 // POST /detalle-pedidos
 export async function postDetallePedido(req: Request, res: Response) {
   try {
-    const {
-      cantidad,
-      precio_unitario,
-      pedido_id,
-      producto_id,
-      repartidores_id,
-    } = req.body;
+    const resultado = createDetallePedidoSchema.safeParse(req.body);
 
-    if (
-      cantidad === undefined ||
-      precio_unitario === undefined ||
-      pedido_id === undefined ||
-      producto_id === undefined ||
-      repartidores_id === undefined
-    ) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
-      });
-      return;
-    }
-
-    if (Number(cantidad) <= 0) {
-      res.status(400).json({
-        error: "La cantidad debe ser mayor a 0",
-      });
-      return;
-    }
-
-    if (Number(precio_unitario) <= 0) {
-      res.status(400).json({
-        error: "El precio_unitario debe ser mayor a 0",
+        error: resultado.error.issues,
       });
       return;
     }
 
     const datos: CreateDetallePedidoInput = {
-      cantidad: Number(cantidad),
-      precio_unitario: Number(precio_unitario),
-      pedido_id: Number(pedido_id),
-      producto_id: Number(producto_id),
-      repartidores_id: Number(repartidores_id),
+      cantidad: resultado.data.cantidad,
+      precio_unitario: resultado.data.precio_unitario,
+      pedido_id: resultado.data.pedido_id,
+      producto_id: resultado.data.producto_id,
+      repartidores_id: resultado.data.repartidores_id,
     };
 
     const detalle = await DetallePedidoModel.create(datos);
@@ -112,57 +125,36 @@ export async function postDetallePedido(req: Request, res: Response) {
 // PUT /detalle-pedidos/:id
 export async function putDetallePedido(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultadoId = detallePedidoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultadoId.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultadoId.error.issues,
       });
       return;
     }
 
-    const {
-      cantidad,
-      precio_unitario,
-      pedido_id,
-      producto_id,
-      repartidores_id,
-    } = req.body;
+    const resultadoDatos = updateDetallePedidoSchema.safeParse(req.body);
 
-    if (
-      cantidad === undefined ||
-      precio_unitario === undefined ||
-      pedido_id === undefined ||
-      producto_id === undefined ||
-      repartidores_id === undefined
-    ) {
+    if (!resultadoDatos.success) {
       res.status(400).json({
-        error: "Faltan datos obligatorios",
+        error: resultadoDatos.error.issues,
       });
       return;
     }
 
-    if (Number(cantidad) <= 0) {
+    const datos = resultadoDatos.data;
+
+    if (Object.keys(datos).length === 0) {
       res.status(400).json({
-        error: "La cantidad debe ser mayor a 0",
+        error: "Debes enviar al menos un campo para actualizar",
       });
       return;
     }
 
-    if (Number(precio_unitario) <= 0) {
-      res.status(400).json({
-        error: "El precio_unitario debe ser mayor a 0",
-      });
-      return;
-    }
+    const { id } = resultadoId.data;
 
-    const detalle = await DetallePedidoModel.update(id, {
-      cantidad: Number(cantidad),
-      precio_unitario: Number(precio_unitario),
-      pedido_id: Number(pedido_id),
-      producto_id: Number(producto_id),
-      repartidores_id: Number(repartidores_id),
-    });
+    const detalle = await DetallePedidoModel.update(id, datos);
 
     if (!detalle) {
       res.status(404).json({
@@ -184,14 +176,16 @@ export async function putDetallePedido(req: Request, res: Response) {
 // DELETE /detalle-pedidos/:id
 export async function deleteDetallePedido(req: Request, res: Response) {
   try {
-    const id = Number(req.params.id);
+    const resultado = detallePedidoIdSchema.safeParse(req.params);
 
-    if (isNaN(id)) {
+    if (!resultado.success) {
       res.status(400).json({
-        error: "El ID debe ser numérico",
+        error: resultado.error.issues,
       });
       return;
     }
+
+    const { id } = resultado.data;
 
     const eliminado = await DetallePedidoModel.delete(id);
 

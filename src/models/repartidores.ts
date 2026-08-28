@@ -24,6 +24,77 @@ export const RepartidorModel = {
     return rows;
   },
 
+  // Obtener por disponibilidad
+  findByActivo: async (activo: boolean): Promise<Repartidor[]> => {
+    const { rows } = await pool.query(
+      `
+      SELECT *
+      FROM repartidores
+      WHERE activo = $1
+      ORDER BY id ASC;
+      `,
+      [activo],
+    );
+
+    return rows;
+  },
+
+  // Obtener paginados
+  findPaginated: async (
+    limit: number,
+    offset: number,
+    activo?: boolean,
+  ): Promise<Repartidor[]> => {
+    let query = `
+      SELECT *
+      FROM repartidores
+    `;
+
+    const valores: unknown[] = [];
+
+    if (activo !== undefined) {
+      query += `
+        WHERE activo = $1
+      `;
+
+      valores.push(activo);
+    }
+
+    query += `
+      ORDER BY id ASC
+      LIMIT $${valores.length + 1}
+      OFFSET $${valores.length + 2};
+    `;
+
+    valores.push(limit, offset);
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows;
+  },
+
+  // Contar repartidores
+  count: async (activo?: boolean): Promise<number> => {
+    let query = `
+      SELECT COUNT(*)::int AS total
+      FROM repartidores
+    `;
+
+    const valores: unknown[] = [];
+
+    if (activo !== undefined) {
+      query += `
+        WHERE activo = $1
+      `;
+
+      valores.push(activo);
+    }
+
+    const { rows } = await pool.query(query, valores);
+
+    return rows[0].total;
+  },
+
   // Obtener por ID
   findById: async (id: number): Promise<Repartidor | null> => {
     const { rows } = await pool.query(
@@ -61,19 +132,26 @@ export const RepartidorModel = {
     id: number,
     dato: UpdateRepartidorInput,
   ): Promise<Repartidor | null> => {
-    const { rows } = await pool.query(
-      `
-        UPDATE repartidores
-        SET
-          nombre = $1,
-          vehiculo = $2,
-          telefono = $3,
-          activo = $4
-        WHERE id = $5
-        RETURNING *;
-      `,
-      [dato.nombre, dato.vehiculo, dato.telefono, dato.activo, id],
-    );
+    const campos = Object.keys(dato);
+
+    if (campos.length === 0) {
+      return null;
+    }
+
+    const valores = Object.values(dato);
+
+    const set = campos
+      .map((campo, index) => `${campo} = $${index + 1}`)
+      .join(", ");
+
+    const query = `
+      UPDATE repartidores
+      SET ${set}
+      WHERE id = $${valores.length + 1}
+      RETURNING *;
+    `;
+
+    const { rows } = await pool.query(query, [...valores, id]);
 
     return rows[0] || null;
   },
